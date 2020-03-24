@@ -5,7 +5,7 @@ use crate::definitions::{pack, Action, State};
 use vte_generate_state_changes::generate_state_changes;
 
 // Generate state changes at compile-time
-pub static STATE_CHANGES: [[u8; 256]; 16] = state_changes();
+pub static STATE_CHANGES: [[u8; 256]; State::TableSize] = state_changes();
 generate_state_changes!(state_changes, {
     Anywhere {
         0x18 => (Ground, Execute),
@@ -46,7 +46,7 @@ generate_state_changes!(state_changes, {
         0x50        => (DcsEntry, None),
         0x58        => (SosPmApcString, None),
         0x5e        => (SosPmApcString, None),
-        0x5f        => (SosPmApcString, None),
+        0x5f        => (ApcEntry, None),
     },
 
     EscapeIntermediate {
@@ -173,5 +173,45 @@ generate_state_changes!(state_changes, {
         0x20..=0x9b => (Anywhere, OscPut),
         0x9c        => (Ground, None),
         0x9d..=0xff => (Anywhere, OscPut),
+    },
+
+    ApcEntry {
+        0x00..=0x17 => (Anywhere, Ignore),
+        0x19        => (Anywhere, Ignore),
+        0x1c..=0x1f => (Anywhere, Ignore),
+        0x20..=0x7f => (Anywhere, Ignore),
+        0x9c        => (Ground, None),
+    },
+
+    KittyEntry {
+      0x41..=0x5a   => (KittyVariable, Collect),
+      0x61..=0x7a   => (KittyVariable, Collect),
+      0x00..=0xff   => (SosPmApcString, KittyFail),
+    },
+
+    KittyVariable {
+      0x3d          => (KittyValue, KittyDefine),
+      0x41..=0x5a   => (KittyVariable, Collect),
+      0x61..=0x7a   => (KittyVariable, Collect),
+      0x00..=0xff   => (SosPmApcString, KittyFail),
+    },
+
+    KittyValue {
+      0x2c          => (KittyEntry, KittyAssign),
+      0x3b          => (KittyStream, KittyAssign),
+      0x30..=0x39   => (KittyValue, Collect),
+      0x41..=0x5a   => (KittyValue, Collect),
+      0x61..=0x7a   => (KittyValue, Collect),
+      0x00..=0xff   => (SosPmApcString, KittyFail),
+    },
+
+    KittyStream {
+      0x1b          => (Escape, KittyRead),
+      0x30..=0x39   => (KittyStream, Collect),
+      0x41..=0x5a   => (KittyStream, Collect),
+      0x61..=0x7a   => (KittyStream, Collect),
+      0x2b          => (KittyStream, Collect),
+      0x2f          => (KittyStream, Collect),
+      0x00..=0xff   => (SosPmApcString, KittyFail),
     }
 });

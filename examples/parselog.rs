@@ -47,6 +47,20 @@ impl vte::Perform for Log {
             intermediates, ignore, byte
         );
     }
+
+    fn kitty(&mut self, this: vte::kitty::Kitty) {
+        println!(
+            "[kitty] {}",
+            this
+        );
+    }
+
+    fn debug(&mut self, message: &'static str) {
+        println!(
+            "[debug] {}",
+            message,
+        )
+    }
 }
 
 fn main() {

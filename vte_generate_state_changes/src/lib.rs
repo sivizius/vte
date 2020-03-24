@@ -25,8 +25,8 @@ pub fn generate_state_changes(item: proc_macro::TokenStream) -> proc_macro::Toke
     let assignments_stream = states_stream(&mut iter);
 
     quote!(
-        const fn #fn_name() -> [[u8; 256]; 16] {
-            let mut state_changes = [[0; 256]; 16];
+        const fn #fn_name() -> [[u8; 256]; State::TableSize] {
+            let mut state_changes = [[0; 256]; State::TableSize];
 
             #assignments_stream
 

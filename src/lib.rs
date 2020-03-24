@@ -42,8 +42,10 @@ use utf8parse as utf8;
 
 mod definitions;
 mod table;
+pub mod kitty;
 
 use definitions::{unpack, Action, State};
+use kitty::{Kitty,KittyAction,KittyCompression,KittyDelete,KittyMedium};
 
 const MAX_INTERMEDIATES: usize = 2;
 #[cfg(any(feature = "no_std", test))]
@@ -69,20 +71,21 @@ impl<'a, P: Perform> utf8::Receiver for VtUtf8Receiver<'a, P> {
 /// [`Perform`]: trait.Perform.html
 #[derive(Default)]
 pub struct Parser {
-    state: State,
-    intermediates: [u8; MAX_INTERMEDIATES],
-    intermediate_idx: usize,
-    params: [i64; MAX_PARAMS],
-    param: i64,
-    num_params: usize,
+    state:              State,
+    intermediates:      [u8; MAX_INTERMEDIATES],
+    intermediate_idx:   usize,
+    params:             [i64; MAX_PARAMS],
+    param:              i64,
+    num_params:         usize,
     #[cfg(feature = "no_std")]
-    osc_raw: ArrayVec<[u8; MAX_OSC_RAW]>,
+    osc_raw:            ArrayVec<[u8; MAX_OSC_RAW]>,
     #[cfg(not(feature = "no_std"))]
-    osc_raw: Vec<u8>,
-    osc_params: [(usize, usize); MAX_PARAMS],
-    osc_num_params: usize,
-    ignoring: bool,
-    utf8_parser: utf8::Parser,
+    osc_raw:            Vec<u8>,
+    osc_params:         [(usize, usize); MAX_PARAMS],
+    osc_num_params:     usize,
+    ignoring:           bool,
+    utf8_parser:        utf8::Parser,
+    kitty:              Kitty,
 }
 
 impl Parser {
@@ -294,7 +297,9 @@ impl Parser {
             Action::EscDispatch => {
                 performer.esc_dispatch(self.intermediates(), self.ignoring, byte)
             },
-            Action::Ignore | Action::None => (),
+            Action::Ignore | Action::None => {
+              performer.debug("Ignore");
+            },
             Action::Collect => {
                 if self.intermediate_idx == MAX_INTERMEDIATES {
                     self.ignoring = true;
@@ -330,6 +335,21 @@ impl Parser {
                 self.param = 0;
             },
             Action::BeginUtf8 => self.process_utf8(performer, byte),
+            Action::KittyInitalise => {
+                performer.debug("Kitty Initialise");
+            },
+            Action::KittyDefine => {
+                performer.debug("Kitty Define");
+            },
+            Action::KittyAssign => {
+                performer.debug("Kitty Assign");
+            },
+            Action::KittyRead => {
+                performer.debug("Kitty Read");
+            },
+            Action::KittyFail => {
+                performer.debug("Kitty Fail");
+            },
         }
     }
 }
@@ -387,6 +407,12 @@ pub trait Perform {
     /// The `ignore` flag indicates that more than two intermediates arrived and
     /// subsequent characters were ignored.
     fn esc_dispatch(&mut self, intermediates: &[u8], ignore: bool, byte: u8);
+
+    /// Pet a `Kitty` =(^.^)=.
+    fn kitty(&mut self, this: Kitty);
+
+    /// For debugging.
+    fn debug(&mut self, message: &'static str);
 }
 
 #[cfg(all(test, feature = "no_std"))]
@@ -437,6 +463,10 @@ mod tests {
         fn csi_dispatch(&mut self, _: &[i64], _: &[u8], _: bool, _: char) {}
 
         fn esc_dispatch(&mut self, _: &[u8], _: bool, _: u8) {}
+
+        fn kitty(&mut self, _: Kitty) {}
+
+        fn debug(&mut self, _: &'static str) {}
     }
 
     #[derive(Default)]
@@ -468,6 +498,10 @@ mod tests {
         }
 
         fn esc_dispatch(&mut self, _: &[u8], _: bool, _: u8) {}
+
+        fn kitty(&mut self, _: Kitty) {}
+
+        fn debug(&mut self, _: &'static str) {}
     }
 
     #[derive(Default)]
@@ -506,6 +540,10 @@ mod tests {
         fn csi_dispatch(&mut self, _: &[i64], _: &[u8], _: bool, _: char) {}
 
         fn esc_dispatch(&mut self, _: &[u8], _: bool, _: u8) {}
+
+        fn kitty(&mut self, _: Kitty) {}
+
+        fn debug(&mut self, _: &'static str) {}
     }
 
     #[derive(Default)]
@@ -537,6 +575,10 @@ mod tests {
             self.byte = byte;
             self.dispatched_esc = true;
         }
+
+        fn kitty(&mut self, _: Kitty) {}
+
+        fn debug(&mut self, _: &'static str) {}
     }
 
     #[test]
@@ -890,6 +932,10 @@ mod bench {
 
         fn esc_dispatch(&mut self, intermediates: &[u8], ignore: bool, byte: u8) {
             black_box((intermediates, ignore, byte));
+        }
+
+        fn kitty(&mut self, this: Kitty) {
+
         }
     }
 

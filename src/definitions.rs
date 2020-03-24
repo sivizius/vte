@@ -3,22 +3,31 @@ use core::mem;
 #[allow(dead_code)]
 #[derive(Debug, Copy, Clone)]
 pub enum State {
-    Anywhere = 0,
-    CsiEntry = 1,
-    CsiIgnore = 2,
-    CsiIntermediate = 3,
-    CsiParam = 4,
-    DcsEntry = 5,
-    DcsIgnore = 6,
-    DcsIntermediate = 7,
-    DcsParam = 8,
-    DcsPassthrough = 9,
-    Escape = 10,
-    EscapeIntermediate = 11,
-    Ground = 12,
-    OscString = 13,
-    SosPmApcString = 14,
-    Utf8 = 15,
+    Anywhere            = 0,
+    CsiEntry            = 1,
+    CsiIgnore           = 2,
+    CsiIntermediate     = 3,
+    CsiParam            = 4,
+    DcsEntry            = 5,
+    DcsIgnore           = 6,
+    DcsIntermediate     = 7,
+    DcsParam            = 8,
+    DcsPassthrough      = 9,
+    Escape              = 10,
+    EscapeIntermediate  = 11,
+    Ground              = 12,
+    OscString           = 13,
+    SosPmApcString      = 14,
+    Utf8                = 15,
+    ApcEntry            = 16,
+    KittyEntry          = 17,
+    KittyVariable       = 18,
+    KittyValue          = 19,
+    KittyStream         = 20,
+}
+
+impl State {
+  pub const  TableSize: usize = 21;
 }
 
 impl Default for State {
@@ -30,22 +39,27 @@ impl Default for State {
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub enum Action {
-    None = 0,
-    Clear = 1,
-    Collect = 2,
-    CsiDispatch = 3,
-    EscDispatch = 4,
-    Execute = 5,
-    Hook = 6,
-    Ignore = 7,
-    OscEnd = 8,
-    OscPut = 9,
-    OscStart = 10,
-    Param = 11,
-    Print = 12,
-    Put = 13,
-    Unhook = 14,
-    BeginUtf8 = 15,
+    None            = 0,
+    Clear           = 1,
+    Collect         = 2,
+    CsiDispatch     = 3,
+    EscDispatch     = 4,
+    Execute         = 5,
+    Hook            = 6,
+    Ignore          = 7,
+    OscEnd          = 8,
+    OscPut          = 9,
+    OscStart        = 10,
+    Param           = 11,
+    Print           = 12,
+    Put             = 13,
+    Unhook          = 14,
+    BeginUtf8       = 15,
+    KittyInitalise  = 16,
+    KittyDefine     = 17,
+    KittyAssign     = 18,
+    KittyRead       = 19,
+    KittyFail       = 20,
 }
 
 impl State {
